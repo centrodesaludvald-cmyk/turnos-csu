@@ -1,1 +1,355 @@
-# turnos-csu
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Turnos Equipo Clínico — CSU Valdivia</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #1a1a1a; min-height: 100vh; }
+  .container { padding: 1.5rem 1rem; max-width: 480px; margin: 0 auto; }
+  .header { text-align: center; margin-bottom: 1.5rem; }
+  .header h1 { font-size: 18px; font-weight: 600; color: #1a1a1a; }
+  .header p { font-size: 13px; color: #666; margin-top: 4px; }
+  .logo { font-size: 13px; color: #999; text-align: center; margin-bottom: 1rem; font-weight: 500; letter-spacing: 0.5px; }
+  select, textarea, button { font-family: inherit; font-size: 14px; border-radius: 8px; border: 1px solid #ddd; padding: 10px 12px; width: 100%; background: #fff; color: #1a1a1a; }
+  select:focus, textarea:focus { outline: none; border-color: #888; }
+  button { cursor: pointer; background: #fff; border: 1px solid #ddd; width: auto; padding: 8px 16px; transition: background 0.15s; }
+  button:hover { background: #f0f0f0; }
+  .select-wrap { margin-bottom: 1rem; }
+  .day-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 10px; }
+  .day-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .day-name { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+  .day-date { font-size: 12px; color: #888; }
+  .bloque-row { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-top: 1px solid #f0f0f0; }
+  .bloque-area { font-size: 12px; color: #666; min-width: 95px; padding-top: 3px; }
+  .bloque-right { display: flex; flex-direction: column; gap: 4px; }
+  .badge { font-size: 11px; padding: 3px 9px; border-radius: 6px; background: #e8f1fc; color: #1a5ca8; display: inline-block; font-weight: 500; }
+  .badge.colacion { background: #fef3e2; color: #8a5100; }
+  .tarea-box { margin-top: 8px; padding: 8px 10px; background: #f0faf5; border-radius: 8px; border-left: 3px solid #1D9E75; font-size: 12px; color: #1a1a1a; }
+  .tarea-label { font-size: 11px; color: #666; margin-bottom: 2px; }
+  .no-result { text-align: center; padding: 2rem; color: #888; font-size: 14px; }
+  .loading { text-align: center; padding: 1.5rem; color: #aaa; font-size: 13px; }
+  .admin-toggle { text-align: center; margin-top: 2rem; margin-bottom: 0.5rem; }
+  .admin-toggle button { font-size: 12px; color: #bbb; background: none; border: none; padding: 4px 8px; width: auto; }
+  .admin-toggle button:hover { color: #888; background: none; }
+  .admin-panel { display: none; border: 1px solid #e8e8e8; border-radius: 12px; padding: 1rem 1.25rem; margin-top: 0.5rem; background: #fff; }
+  .admin-panel.open { display: block; }
+  .admin-section { margin-bottom: 1.25rem; }
+  .admin-section-title { font-size: 13px; font-weight: 600; color: #1a1a1a; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #f0f0f0; }
+  .flex-row { display: flex; gap: 6px; margin-bottom: 6px; }
+  .flex-row select { flex: 1; font-size: 13px; padding: 8px 10px; }
+  textarea.admin-txt { width: 100%; font-size: 13px; padding: 8px 10px; resize: vertical; min-height: 52px; border: 1px solid #ddd; border-radius: 8px; }
+  .btn-add { width: 100%; padding: 9px; font-size: 13px; margin-top: 6px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-weight: 500; }
+  .btn-add:hover { background: #333; }
+  .btn-danger { width: 100%; padding: 9px; font-size: 13px; margin-top: 6px; background: #fff; color: #c0392b; border: 1px solid #e8e8e8; border-radius: 8px; }
+  .btn-danger:hover { background: #fff5f5; }
+  .items-list { margin-top: 10px; }
+  .list-item { display: flex; align-items: flex-start; gap: 6px; padding: 7px 0; border-top: 1px solid #f0f0f0; font-size: 12px; }
+  .list-item-info { flex: 1; color: #1a1a1a; }
+  .list-item-sub { color: #888; font-size: 11px; margin-top: 1px; }
+  .del-btn { background: none; border: none; cursor: pointer; color: #bbb; padding: 2px 4px; font-size: 14px; width: auto; flex-shrink: 0; }
+  .del-btn:hover { color: #c0392b; background: none; }
+  .empty-list { font-size: 12px; color: #aaa; text-align: center; padding: 8px 0; }
+  .semana-header { font-size: 12px; color: #888; text-align: center; margin-bottom: 1rem; }
+  .saved-ok { font-size: 11px; color: #1D9E75; text-align: center; margin-top: 4px; display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="logo">CSU VALDIVIA — USS</div>
+  <div class="header">
+    <h1><i class="ti ti-calendar-week" style="font-size:20px;vertical-align:-3px;margin-right:6px"></i>Turnos equipo clínico</h1>
+    <p id="semanaLabel">Cargando...</p>
+  </div>
+
+  <div class="select-wrap">
+    <select id="nameSelect">
+      <option value="">— Selecciona tu nombre —</option>
+    </select>
+  </div>
+
+  <div id="results"><div class="loading"><i class="ti ti-loader" style="font-size:20px"></i><br>Cargando turnos...</div></div>
+
+  <div class="admin-toggle">
+    <button id="adminBtn"><i class="ti ti-settings" style="font-size:13px;vertical-align:-1px;margin-right:4px"></i>admin</button>
+  </div>
+
+  <div class="admin-panel" id="adminPanel">
+
+    <div class="admin-section">
+      <p class="admin-section-title"><i class="ti ti-calendar" style="font-size:13px;vertical-align:-1px;margin-right:5px"></i>Configurar semana</p>
+      <div class="flex-row" style="flex-direction:column;gap:6px">
+        <input type="text" id="semanaTexto" placeholder="Ej: Semana 22 – 27 junio 2025" style="font-size:13px;padding:8px 10px;border:1px solid #ddd;border-radius:8px;width:100%">
+      </div>
+      <button class="btn-add" id="saveSemanaBtn"><i class="ti ti-device-floppy" style="font-size:13px;vertical-align:-2px;margin-right:3px"></i>Guardar semana</button>
+      <div class="saved-ok" id="semanaSaved">✓ Guardado</div>
+    </div>
+
+    <div class="admin-section">
+      <p class="admin-section-title"><i class="ti ti-clock" style="font-size:13px;vertical-align:-1px;margin-right:5px"></i>Asignar bloque horario</p>
+      <div class="flex-row">
+        <select id="bDia">
+          <option value="">Día</option>
+          <option value="Lunes">Lunes</option><option value="Martes">Martes</option>
+          <option value="Miércoles">Miércoles</option><option value="Jueves">Jueves</option>
+          <option value="Viernes">Viernes</option><option value="Sábado">Sábado</option>
+        </select>
+        <select id="bNombre">
+          <option value="">Persona</option>
+          <option>Barbara</option><option>Camila</option><option>Cony</option><option>Diego</option>
+          <option>Gisa</option><option>Jacqueline</option><option>Javiera</option><option>Marcia</option><option>Nathaly</option>
+        </select>
+      </div>
+      <div class="flex-row">
+        <select id="bArea">
+          <option value="">Área</option>
+          <option>Esterilización</option><option>Rayos</option><option>Pabellón</option>
+          <option>Dispensario 1</option><option>Dispensario 2</option>
+        </select>
+        <select id="bHorario">
+          <option value="">Horario</option>
+          <option>07:45–13:00</option><option>07:45–17:00</option>
+          <option>09:00–14:00</option>
+          <option>10:00–14:00</option><option>10:00–20:00</option>
+          <option>11:00–14:00</option><option>11:00–20:00</option>
+          <option>13:00–14:00</option>
+          <option>14:00–15:00</option><option>14:00–16:00</option>
+          <option>14:00–17:00</option><option>14:00–20:00</option>
+          <option>15:00–16:00</option><option>15:00–17:00</option>
+          <option>16:00–20:00</option><option>17:00–20:00</option>
+        </select>
+      </div>
+      <button class="btn-add" id="addBloqueBtn"><i class="ti ti-plus" style="font-size:13px;vertical-align:-2px;margin-right:3px"></i>Agregar bloque</button>
+      <div class="saved-ok" id="bloqueSaved">✓ Guardado</div>
+      <div class="items-list" id="bloquesList"></div>
+    </div>
+
+    <div class="admin-section">
+      <p class="admin-section-title"><i class="ti ti-clipboard-list" style="font-size:13px;vertical-align:-1px;margin-right:5px"></i>Asignar tarea</p>
+      <div class="flex-row">
+        <select id="tDia">
+          <option value="">Día</option>
+          <option value="Lunes">Lunes</option><option value="Martes">Martes</option>
+          <option value="Miércoles">Miércoles</option><option value="Jueves">Jueves</option>
+          <option value="Viernes">Viernes</option><option value="Sábado">Sábado</option>
+        </select>
+        <select id="tNombre">
+          <option value="">Persona</option>
+          <option>Barbara</option><option>Camila</option><option>Cony</option><option>Diego</option>
+          <option>Gisa</option><option>Jacqueline</option><option>Javiera</option><option>Marcia</option><option>Nathaly</option>
+        </select>
+      </div>
+      <textarea class="admin-txt" id="tTexto" placeholder="Escribe la tarea o indicación..."></textarea>
+      <button class="btn-add" id="addTareaBtn"><i class="ti ti-plus" style="font-size:13px;vertical-align:-2px;margin-right:3px"></i>Agregar tarea</button>
+      <div class="saved-ok" id="tareaSaved">✓ Guardado</div>
+      <div class="items-list" id="tareasList"></div>
+    </div>
+
+    <div class="admin-section">
+      <p class="admin-section-title" style="color:#c0392b"><i class="ti ti-trash" style="font-size:13px;vertical-align:-1px;margin-right:5px"></i>Limpiar semana</p>
+      <p style="font-size:12px;color:#888;margin-bottom:8px">Borra todos los bloques y tareas para comenzar una semana nueva.</p>
+      <button class="btn-danger" id="clearBtn"><i class="ti ti-refresh" style="font-size:13px;vertical-align:-2px;margin-right:3px"></i>Limpiar todo</button>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, push, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDrm0TlQ0fNK57xIFSVX82L1qdMbyBU8Ng",
+  authDomain: "turnos-equipo-cl.firebaseapp.com",
+  databaseURL: "https://turnos-equipo-cl-default-rtdb.firebaseio.com",
+  projectId: "turnos-equipo-cl",
+  storageBucket: "turnos-equipo-cl.firebasestorage.app",
+  messagingSenderId: "313100676497",
+  appId: "1:313100676497:web:5edc3746bc1be66758be30"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const COLACION = { '07:45': '13:00–14:00', '09:00': '13:00–14:00', '10:00': '14:00–15:00', '11:00': '14:00–15:00' };
+function getColacion(horario) { return COLACION[horario.split('–')[0]] || null; }
+
+const dias = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const nombres = ['Barbara','Camila','Cony','Diego','Gisa','Jacqueline','Javiera','Marcia','Nathaly'];
+
+let bloques = {};
+let tareas = {};
+let currentNombre = '';
+
+// Populate name selector
+const nameSelect = document.getElementById('nameSelect');
+nombres.forEach(n => {
+  const opt = document.createElement('option');
+  opt.value = n; opt.textContent = n;
+  nameSelect.appendChild(opt);
+});
+
+// Listen to semana
+onValue(ref(db, 'semana'), snap => {
+  const val = snap.val();
+  document.getElementById('semanaLabel').textContent = val || 'Semana actual';
+  const si = document.getElementById('semanaTexto');
+  if (si && !si.value) si.value = val || '';
+});
+
+// Listen to bloques
+onValue(ref(db, 'bloques'), snap => {
+  bloques = snap.val() || {};
+  if (currentNombre) renderResults(currentNombre);
+  renderBloquesList();
+});
+
+// Listen to tareas
+onValue(ref(db, 'tareas'), snap => {
+  tareas = snap.val() || {};
+  if (currentNombre) renderResults(currentNombre);
+  renderTareasList();
+});
+
+function renderResults(nombre) {
+  const div = document.getElementById('results');
+  if (!nombre) { div.innerHTML = ''; return; }
+  let html = ''; let found = false;
+
+  dias.forEach(dia => {
+    const propiosBloques = Object.entries(bloques)
+      .filter(([,b]) => b.dia === dia && b.nombre === nombre)
+      .map(([,b]) => b);
+    if (!propiosBloques.length) return;
+    found = true;
+
+    const colaciones = new Set();
+    propiosBloques.forEach(b => { const c = getColacion(b.horario); if (c) colaciones.add(c); });
+    const tareasDia = Object.entries(tareas)
+      .filter(([,t]) => t.dia === dia && t.nombre === nombre)
+      .map(([,t]) => t);
+
+    html += `<div class="day-card">
+      <div class="day-header">
+        <i class="ti ti-calendar-event" style="font-size:16px;color:#888"></i>
+        <span class="day-name">${dia}</span>
+      </div>`;
+
+    propiosBloques.forEach(b => {
+      html += `<div class="bloque-row">
+        <span class="bloque-area"><i class="ti ti-building-hospital" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i>${b.area}</span>
+        <div class="bloque-right"><span class="badge">${b.horario}</span></div>
+      </div>`;
+    });
+
+    colaciones.forEach(c => {
+      html += `<div class="bloque-row">
+        <span class="bloque-area" style="color:#8a5100"><i class="ti ti-tools-kitchen-2" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i>Colación</span>
+        <div class="bloque-right"><span class="badge colacion">${c}</span></div>
+      </div>`;
+    });
+
+    tareasDia.forEach(t => {
+      html += `<div class="tarea-box">
+        <div class="tarea-label"><i class="ti ti-clipboard-text" style="font-size:11px;vertical-align:-1px;margin-right:3px"></i>Tarea asignada</div>
+        ${t.texto}
+      </div>`;
+    });
+
+    html += `</div>`;
+  });
+
+  if (!found) html = `<div class="no-result"><i class="ti ti-user-x" style="font-size:32px;color:#bbb;display:block;margin-bottom:8px"></i><p>Sin turnos asignados esta semana.</p></div>`;
+  div.innerHTML = html;
+}
+
+function showSaved(id) {
+  const el = document.getElementById(id);
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 2000);
+}
+
+function renderBloquesList() {
+  const div = document.getElementById('bloquesList');
+  if (!div) return;
+  const entries = Object.entries(bloques);
+  if (!entries.length) { div.innerHTML = '<p class="empty-list">No hay bloques asignados aún.</p>'; return; }
+  div.innerHTML = entries.map(([key, b]) => `
+    <div class="list-item">
+      <div class="list-item-info">
+        <strong>${b.nombre}</strong> — ${b.dia}
+        <div class="list-item-sub">${b.area} · ${b.horario}${getColacion(b.horario) ? ' · colación ' + getColacion(b.horario) : ''}</div>
+      </div>
+      <button class="del-btn" onclick="deleteBloque('${key}')"><i class="ti ti-trash"></i></button>
+    </div>`).join('');
+}
+
+function renderTareasList() {
+  const div = document.getElementById('tareasList');
+  if (!div) return;
+  const entries = Object.entries(tareas);
+  if (!entries.length) { div.innerHTML = '<p class="empty-list">No hay tareas asignadas aún.</p>'; return; }
+  div.innerHTML = entries.map(([key, t]) => `
+    <div class="list-item">
+      <div class="list-item-info">
+        <strong>${t.nombre}</strong> — ${t.dia}
+        <div class="list-item-sub">${t.texto}</div>
+      </div>
+      <button class="del-btn" onclick="deleteTarea('${key}')"><i class="ti ti-trash"></i></button>
+    </div>`).join('');
+}
+
+window.deleteBloque = key => remove(ref(db, 'bloques/' + key));
+window.deleteTarea = key => remove(ref(db, 'tareas/' + key));
+
+nameSelect.addEventListener('change', e => {
+  currentNombre = e.target.value;
+  renderResults(currentNombre);
+});
+
+document.getElementById('adminBtn').addEventListener('click', () => {
+  document.getElementById('adminPanel').classList.toggle('open');
+});
+
+document.getElementById('saveSemanaBtn').addEventListener('click', () => {
+  const val = document.getElementById('semanaTexto').value.trim();
+  if (!val) return;
+  set(ref(db, 'semana'), val).then(() => showSaved('semanaSaved'));
+});
+
+document.getElementById('addBloqueBtn').addEventListener('click', () => {
+  const dia = document.getElementById('bDia').value;
+  const nombre = document.getElementById('bNombre').value;
+  const area = document.getElementById('bArea').value;
+  const horario = document.getElementById('bHorario').value;
+  if (!dia || !nombre || !area || !horario) return;
+  push(ref(db, 'bloques'), { dia, nombre, area, horario })
+    .then(() => {
+      ['bDia','bNombre','bArea','bHorario'].forEach(id => document.getElementById(id).value = '');
+      showSaved('bloqueSaved');
+    });
+});
+
+document.getElementById('addTareaBtn').addEventListener('click', () => {
+  const dia = document.getElementById('tDia').value;
+  const nombre = document.getElementById('tNombre').value;
+  const texto = document.getElementById('tTexto').value.trim();
+  if (!dia || !nombre || !texto) return;
+  push(ref(db, 'tareas'), { dia, nombre, texto })
+    .then(() => {
+      ['tDia','tNombre'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('tTexto').value = '';
+      showSaved('tareaSaved');
+    });
+});
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  if (!confirm('¿Seguro que quieres borrar todos los bloques y tareas?')) return;
+  remove(ref(db, 'bloques'));
+  remove(ref(db, 'tareas'));
+});
+</script>
+</body>
+</html>
