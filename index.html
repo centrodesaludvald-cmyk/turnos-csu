@@ -203,6 +203,7 @@ textarea.admin-txt { width: 100%; font-size: 13px; padding: 8px 10px; resize: ve
       <button class="tab" onclick="switchTab('asistencia')"><i class="ti ti-check" style="font-size:12px"></i><br>Asistencia</button>
       <button class="tab" onclick="switchTab('cambios')"><i class="ti ti-switch-horizontal" style="font-size:12px"></i><br>Cambios</button>
       <button class="tab" onclick="switchTab('resumen')"><i class="ti ti-chart-bar" style="font-size:12px"></i><br>Resumen</button>
+      <button class="tab" onclick="switchTab('estado')"><i class="ti ti-activity" style="font-size:12px"></i><br>Estado</button>
     </div>
 
     <!-- PANORAMA -->
@@ -238,6 +239,14 @@ textarea.admin-txt { width: 100%; font-size: 13px; padding: 8px 10px; resize: ve
     <!-- RESUMEN -->
     <div class="tab-content" id="tab-resumen">
       <div id="resumenView"></div>
+    </div>
+
+    <!-- ESTADO -->
+    <div class="tab-content" id="tab-estado">
+      <div class="select-wrap">
+        <select id="estadoNameSelect"><option value="">— Selecciona tu nombre —</option></select>
+      </div>
+      <div id="estadoView"><p style="text-align:center;color:#aaa;font-size:13px;padding:2rem">Selecciona tu nombre para ver tu estado.</p></div>
     </div>
 
     <div id="pendientesSection"></div>
@@ -330,6 +339,22 @@ textarea.admin-txt { width: 100%; font-size: 13px; padding: 8px 10px; resize: ve
         </div>
         <button class="btn-add" id="addLlamadoBtn"><i class="ti ti-plus" style="font-size:13px;margin-right:3px"></i>Asignar llamado</button>
         <div class="saved-ok" id="llamadoSaved">✓ Llamado asignado</div>
+        <div class="items-list" id="llamadosList"></div>
+      </div>
+
+      <div class="admin-section">
+        <p class="admin-section-title"><i class="ti ti-phone-call" style="font-size:13px;vertical-align:-1px;margin-right:5px"></i>Asignar estado — De llamado</p>
+        <p style="font-size:12px;color:#888;margin-bottom:8px">Asigna a una persona como "De llamado" en un servicio. El sistema la cuenta como cobertura y no genera alerta.</p>
+        <div class="flex-row">
+          <select id="llNombre"><option value="">Persona</option></select>
+          <select id="llDia"><option value="">Día</option><option>Lunes</option><option>Martes</option><option>Miércoles</option><option>Jueves</option><option>Viernes</option><option>Sábado</option></select>
+        </div>
+        <div class="flex-row">
+          <select id="llArea"><option value="">Área</option><option>Esterilización</option><option>Rayos</option><option>Pabellón</option><option>Dispensario 1</option><option>Dispensario 2</option></select>
+          <select id="llHorario"><option value="">Horario</option></select>
+        </div>
+        <button class="btn-add" id="addLlamadoBtn"><i class="ti ti-plus" style="font-size:13px;margin-right:3px"></i>Asignar</button>
+        <div class="saved-ok" id="llamadoSaved">✓ Asignado</div>
         <div class="items-list" id="llamadosList"></div>
       </div>
 
@@ -751,68 +776,68 @@ document.getElementById('clearBtn').addEventListener('click',function(){if(!conf
 </script>
 </body>
 </html>
-<script>
 
-// ===================== MÓDULO LLAMADO =====================
+
+<script>
+// ===================== MÓDULO ESTADO / DE LLAMADO =====================
 var llamados = {};
 
-// Agregar llamado a listeners
-var origAttachListenersMain = window.attachListeners;
-
-function initLlamadoListeners() {
-  sedeRef('llamados').on('value', function(snap) {
-    llamados = snap.val() || {};
-    renderLlamadosList();
-    renderPanorama();
-  });
-}
-
-// Poblar selector horario llamado
-(function() {
-  var llHorSel = document.getElementById('llHorario');
-  if (llHorSel) {
-    horarios.forEach(function(h) {
-      var o = document.createElement('option'); o.value = h; o.textContent = h;
-      llHorSel.appendChild(o);
-    });
-  }
+// Populate horario selector
+(function waitLlHorario() {
+  var sel = document.getElementById('llHorario');
+  if (!sel) { setTimeout(waitLlHorario, 200); return; }
+  horarios.forEach(function(h) { var o = document.createElement('option'); o.value = h; o.textContent = h; sel.appendChild(o); });
 })();
 
-// Poblar nombre llamado cuando cambian nombres
-var origUpdateNS = window.updateNameSelects;
-window.updateNameSelects = function() {
-  origUpdateNS();
-  var llSel = document.getElementById('llNombre');
-  if (llSel) {
-    var cur = llSel.value;
-    llSel.innerHTML = '<option value="">Persona</option>';
-    nombresEquipo.forEach(function(n) { var o = document.createElement('option'); o.value = n; o.textContent = n; llSel.appendChild(o); });
-    if (cur) llSel.value = cur;
-  }
-};
-
-// Attach llamado listener on sede selection
-var origSeleccionarSede = window.seleccionarSede;
+// Attach Firebase listener for llamados when sede is selected
+var _origSelSede = window.seleccionarSede;
 window.seleccionarSede = function(sede) {
-  origSeleccionarSede(sede);
-  setTimeout(initLlamadoListeners, 300);
+  _origSelSede(sede);
+  setTimeout(function() {
+    sedeRef('llamados').on('value', function(snap) {
+      llamados = snap.val() || {};
+      renderLlamadosList();
+      renderEstadoView();
+      renderPanorama();
+    });
+  }, 400);
 };
 
-// Add llamado btn
+// Update llNombre select when nombres change
+var _origUNS = window.updateNameSelects;
+window.updateNameSelects = function() {
+  _origUNS();
+  ['llNombre','estadoNameSelect'].forEach(function(id) {
+    var sel = document.getElementById(id);
+    if (!sel) return;
+    var cur = sel.value;
+    sel.innerHTML = id === 'llNombre' ? '<option value="">Persona</option>' : '<option value="">— Selecciona tu nombre —</option>';
+    nombresEquipo.forEach(function(n) { var o = document.createElement('option'); o.value = n; o.textContent = n; sel.appendChild(o); });
+    if (cur) sel.value = cur;
+  });
+};
+
+// Add llamado button handler
 document.addEventListener('DOMContentLoaded', function() {
-  var addBtn = document.getElementById('addLlamadoBtn');
-  if (addBtn) {
-    addBtn.addEventListener('click', function() {
+  var btn = document.getElementById('addLlamadoBtn');
+  if (btn) {
+    btn.addEventListener('click', function() {
       var nombre = document.getElementById('llNombre').value;
       var dia = document.getElementById('llDia').value;
       var area = document.getElementById('llArea').value;
       var horario = document.getElementById('llHorario').value;
-      if (!nombre || !dia || !area || !horario) return;
+      if (!nombre || !dia || !area || !horario) { alert('Completa todos los campos.'); return; }
       sedeRef('llamados').push({ nombre: nombre, dia: dia, area: area, horario: horario }).then(function() {
         ['llNombre','llDia','llArea','llHorario'].forEach(function(id) { document.getElementById(id).value = ''; });
         showSaved('llamadoSaved');
       });
     });
+  }
+
+  // Estado name selector
+  var estadoSel = document.getElementById('estadoNameSelect');
+  if (estadoSel) {
+    estadoSel.addEventListener('change', function() { renderEstadoView(); });
   }
 });
 
@@ -820,28 +845,53 @@ function renderLlamadosList() {
   var div = document.getElementById('llamadosList');
   if (!div) return;
   var entries = Object.entries(llamados);
-  if (!entries.length) { div.innerHTML = '<p class="empty-list">No hay llamados asignados.</p>'; return; }
+  if (!entries.length) { div.innerHTML = '<p class="empty-list">No hay estados asignados.</p>'; return; }
   div.innerHTML = entries.map(function(e) {
     var k = e[0], l = e[1];
     return '<div class="list-item"><div class="list-item-info"><strong>' + l.nombre + '</strong> — ' + l.dia +
-      '<div class="list-item-sub">' + l.area + ' · ' + l.horario + ' · De llamado</div></div>' +
+      '<div class="list-item-sub">' + l.area + ' · ' + l.horario + '</div></div>' +
       '<button class="del-btn" onclick="deleteLlamado('' + k + '')"><i class="ti ti-trash"></i></button></div>';
   }).join('');
 }
 
 window.deleteLlamado = function(k) { sedeRef('llamados/' + k).remove(); };
 
-// Override verificarCobertura to account for llamados
-var origVerificarCobertura = window.verificarCobertura || verificarCobertura;
+function renderEstadoView() {
+  var div = document.getElementById('estadoView');
+  if (!div) return;
+  var nombre = document.getElementById('estadoNameSelect') ? document.getElementById('estadoNameSelect').value : '';
+  if (!nombre) {
+    div.innerHTML = '<p style="text-align:center;color:#aaa;font-size:13px;padding:2rem">Selecciona tu nombre para ver tu estado.</p>';
+    return;
+  }
+  var misLlamados = Object.values(llamados).filter(function(l) { return l.nombre === nombre; });
+  if (!misLlamados.length) {
+    div.innerHTML = '<div style="text-align:center;padding:2rem"><i class="ti ti-circle-check" style="font-size:36px;color:#86efac;display:block;margin-bottom:8px"></i><p style="font-size:14px;color:#555">Sin estado especial asignado esta semana.</p></div>';
+    return;
+  }
+  var html = '<div style="margin-bottom:8px;font-size:13px;color:#555;font-weight:500">Estado asignado esta semana:</div>';
+  misLlamados.forEach(function(l) {
+    html += '<div style="background:#fef9c3;border:1.5px dashed #d97706;border-radius:10px;padding:12px 14px;margin-bottom:8px">' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">' +
+      '<i class="ti ti-phone-call" style="font-size:18px;color:#d97706"></i>' +
+      '<span style="font-size:14px;font-weight:600;color:#854d0e">De llamado</span>' +
+      '</div>' +
+      '<div style="font-size:12px;color:#92400e"><strong>' + l.dia + '</strong> · ' + l.area + ' · ' + l.horario + '</div>' +
+      '<div style="font-size:11px;color:#b45309;margin-top:4px">Estás cubriendo este servicio de llamado. El sistema te registra como cobertura activa.</div>' +
+      '</div>';
+  });
+  div.innerHTML = html;
+}
+
+// Override verificarCobertura to count llamados as valid coverage
+var _origVerif = verificarCobertura;
 verificarCobertura = function() {
   var deficit = [];
   REGLAS.forEach(function(regla) {
     regla.dias.forEach(function(dia) {
-      // Count regular bloques
       var cob = Object.values(bloques).filter(function(b) {
         return b.dia === dia && b.area === regla.area && bloqueCobreRegla(b, regla);
       }).length;
-      // Count llamados covering this regla
       var cobLlamado = Object.values(llamados).filter(function(l) {
         return l.dia === dia && l.area === regla.area && bloqueCobreRegla(l, regla);
       }).length;
@@ -854,7 +904,7 @@ verificarCobertura = function() {
 };
 
 // Override renderPanorama to show llamado chips
-var origRenderPanorama = renderPanorama;
+var _origPanorama = renderPanorama;
 renderPanorama = function() {
   var dia = dias[panoramaDiaIdx];
   document.getElementById('panoramaDayLabel').textContent = dia;
@@ -880,7 +930,7 @@ renderPanorama = function() {
         if (sub) cell += '<span class="subarea-tag">' + sub + '</span>';
       });
       enLlamado.forEach(function(l) {
-        cell += '<span class="persona-chip llamado"><i class="ti ti-phone-call" style="font-size:9px;margin-right:3px"></i>' + l.nombre + ' · De llamado</span>';
+        cell += '<span class="persona-chip llamado"><i class="ti ti-phone-call" style="font-size:9px;margin-right:3px"></i>' + l.nombre + '</span>';
       });
       html += '<td>' + cell + '</td>';
     });
@@ -889,38 +939,22 @@ renderPanorama = function() {
   table.innerHTML = html;
 };
 
-// Show llamado in personal view
-var origRenderResultsLlamado = window.renderResults;
-window.renderResults = function(nombre) {
-  origRenderResultsLlamado(nombre);
-  // Add llamado badge if person has llamados this week
-  var misLlamados = Object.values(llamados).filter(function(l) { return l.nombre === nombre; });
-  if (!misLlamados.length) return;
-  var div = document.getElementById('results');
-  if (!div) return;
-  var badgeDiv = document.createElement('div');
-  badgeDiv.style.cssText = 'margin-bottom:10px';
-  var html = '';
-  misLlamados.forEach(function(l) {
-    html += '<div style="background:#fef9c3;border:1px dashed #d97706;border-radius:8px;padding:8px 12px;margin-bottom:6px;font-size:12px;color:#854d0e;font-weight:500">' +
-      '<i class="ti ti-phone-call" style="font-size:13px;vertical-align:-1px;margin-right:5px"></i>' +
-      'De llamado · ' + l.dia + ' · ' + l.area + ' · ' + l.horario + '</div>';
+// Override switchTab to handle estado
+var _origSwitchTab = window.switchTab;
+window.switchTab = function(tab) {
+  _origSwitchTab(tab);
+  var estadoTab = document.getElementById('tab-estado');
+  if (estadoTab) estadoTab.classList.toggle('active', tab === 'estado');
+  document.querySelectorAll('.tab').forEach(function(t) {
+    if (t.innerHTML.indexOf('Estado') !== -1) t.classList.toggle('active', tab === 'estado');
   });
-  badgeDiv.innerHTML = html;
-  // Insert after ausencias badges if present, or at top
-  var firstCard = div.querySelector('.day-card');
-  if (firstCard) div.insertBefore(badgeDiv, firstCard);
-  else div.appendChild(badgeDiv);
+  if (tab === 'estado') renderEstadoView();
 };
 
 // Clear llamados on limpiar semana
-var origClearBtn = document.getElementById('clearBtn');
-if (origClearBtn) {
-  origClearBtn.addEventListener('click', function() {
-    sedeRef('llamados').remove();
-  });
-}
-
+document.getElementById('clearBtn').addEventListener('click', function() {
+  if (currentSede) sedeRef('llamados').remove();
+});
 </script>
 
 <!-- AUSENCIAS PATCH - se inyecta via script -->
