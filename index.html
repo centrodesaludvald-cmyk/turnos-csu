@@ -209,11 +209,13 @@ textarea.atxt{width:100%;font-size:13px;padding:8px 10px;resize:vertical;min-hei
 
     <div id="avisoBanner"></div>
 
-    <div class="tabs">
+    <div class="tabs" id="tabsRow">
       <button class="tab active" onclick="goTab('panorama')"><i class="ti ti-layout-grid" style="font-size:11px"></i><br>Panorama</button>
       <button class="tab" onclick="goTab('mis-turnos')"><i class="ti ti-user" style="font-size:11px"></i><br>Mis turnos</button>
       <button class="tab" onclick="goTab('asistencia')"><i class="ti ti-check" style="font-size:11px"></i><br>Asistencia</button>
       <button class="tab" onclick="goTab('estado')"><i class="ti ti-activity" style="font-size:11px"></i><br>Estado</button>
+    </div>
+    <div class="tabs" id="tabsRow2" style="margin-top:-8px">
       <button class="tab" onclick="goTab('cambios')"><i class="ti ti-switch-horizontal" style="font-size:11px"></i><br>Cambios</button>
       <button class="tab" onclick="goTab('ausencias')"><i class="ti ti-calendar-off" style="font-size:11px"></i><br>Ausencias</button>
       <button class="tab" onclick="goTab('resumen')"><i class="ti ti-chart-bar" style="font-size:11px"></i><br>Resumen</button>
@@ -480,8 +482,14 @@ function updateSelects(){
 // ── TABS ──
 var ALL_TABS=['panorama','mis-turnos','asistencia','estado','cambios','ausencias','resumen'];
 window.goTab=function(tab){
-  document.querySelectorAll('.tab').forEach(function(t,i){t.classList.toggle('active',ALL_TABS[i]===tab);});
-  ALL_TABS.forEach(function(id){document.getElementById('tab-'+id).classList.toggle('active',id===tab);});
+  document.querySelectorAll('.tab').forEach(function(t){
+    var tabId=t.getAttribute('onclick').match(/goTab\('([^']+)'\)/);
+    if(tabId)t.classList.toggle('active',tabId[1]===tab);
+  });
+  ALL_TABS.forEach(function(id){
+    var el=document.getElementById('tab-'+id);
+    if(el)el.classList.toggle('active',id===tab);
+  });
   if(tab==='resumen')renderResumen();
   if(tab==='estado')renderEstado();
   if(tab==='cambios')renderCambios();
